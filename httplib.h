@@ -68,9 +68,9 @@
 
 #if defined(_MSC_VER)
 #ifdef _WIN64
-using ssize_t = __int64;
+using sssize_t = __int64;
 #else
-using ssize_t = int;
+using sssize_t = int;
 #endif
 
 #if _MSC_VER < 1900
@@ -252,7 +252,7 @@ public:
   MultipartReader muitlpart_reader_;
 };
 
-using Range = std::pair<ssize_t, ssize_t>;
+using Range = std::pair<sssize_t, sssize_t>;
 using Ranges = std::vector<Range>;
 
 struct Request {
@@ -1938,12 +1938,12 @@ inline int write_headers(Stream &strm, const T &info, const Headers &headers) {
   return write_len;
 }
 
-inline ssize_t write_content(Stream &strm, ContentProvider content_provider,
+inline sssize_t write_content(Stream &strm, ContentProvider content_provider,
                              size_t offset, size_t length) {
   size_t begin_offset = offset;
   size_t end_offset = offset + length;
   while (offset < end_offset) {
-    ssize_t written_length = 0;
+    sssize_t written_length = 0;
 
     DataSink data_sink;
     data_sink.write = [&](const char *d, size_t l) {
@@ -1956,18 +1956,18 @@ inline ssize_t write_content(Stream &strm, ContentProvider content_provider,
     content_provider(offset, end_offset - offset, data_sink);
     if (written_length < 0) { return written_length; }
   }
-  return static_cast<ssize_t>(offset - begin_offset);
+  return static_cast<sssize_t>(offset - begin_offset);
 }
 
 template <typename T>
-inline ssize_t write_content_chunked(Stream &strm,
+inline sssize_t write_content_chunked(Stream &strm,
                                      ContentProvider content_provider,
                                      T is_shutting_down) {
   size_t offset = 0;
   auto data_available = true;
-  ssize_t total_written_length = 0;
+  sssize_t total_written_length = 0;
   while (data_available && !is_shutting_down()) {
-    ssize_t written_length = 0;
+    sssize_t written_length = 0;
 
     DataSink data_sink;
     data_sink.write = [&](const char *d, size_t l) {
@@ -2122,14 +2122,14 @@ inline bool parse_range_header(const std::string &s, Ranges &ranges) {
       static auto re_another_range = std::regex(R"(\s*(\d*)-(\d*))");
       std::cmatch cm;
       if (std::regex_match(b, e, cm, re_another_range)) {
-        ssize_t first = -1;
+        sssize_t first = -1;
         if (!cm.str(1).empty()) {
-          first = static_cast<ssize_t>(std::stoll(cm.str(1)));
+          first = static_cast<sssize_t>(std::stoll(cm.str(1)));
         }
 
-        ssize_t last = -1;
+        sssize_t last = -1;
         if (!cm.str(2).empty()) {
-          last = static_cast<ssize_t>(std::stoll(cm.str(2)));
+          last = static_cast<sssize_t>(std::stoll(cm.str(2)));
         }
 
         if (first != -1 && last != -1 && first > last) {
