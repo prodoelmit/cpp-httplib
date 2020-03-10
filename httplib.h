@@ -76,8 +76,6 @@ using sssize_t = int;
 #if _MSC_VER < 1900
 #define snprintf _snprintf_s
 #endif
-#else
-using sssize_t = ssize_t;
 #endif // _MSC_VER
 
 #ifndef S_ISREG
@@ -115,6 +113,7 @@ using socket_t = SOCKET;
 
 #else // not _WIN32
 
+using sssize_t = ssize_t;
 #include <arpa/inet.h>
 #include <cstring>
 #include <ifaddrs.h>
