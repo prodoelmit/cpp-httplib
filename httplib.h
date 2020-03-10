@@ -68,9 +68,9 @@
 
 #if defined(_MSC_VER)
 #ifdef _WIN64
-using sssize_t = __int64;
+#using ssize_t = __int64;
 #else
-using sssize_t = int;
+#using ssize_t = int;
 #endif
 
 #if _MSC_VER < 1900
@@ -113,7 +113,6 @@ using socket_t = SOCKET;
 
 #else // not _WIN32
 
-using sssize_t = ssize_t;
 #include <arpa/inet.h>
 #include <cstring>
 #include <ifaddrs.h>
@@ -253,7 +252,7 @@ public:
   MultipartReader muitlpart_reader_;
 };
 
-using Range = std::pair<sssize_t, sssize_t>;
+using Range = std::pair<ssize_t, ssize_t>;
 using Ranges = std::vector<Range>;
 
 struct Request {
@@ -1491,23 +1490,6 @@ inline bool bind_ip_address(socket_t sock, const char *host) {
 }
 
 inline std::string if2ip(const std::string &ifn) {
-#ifndef _WIN32
-  struct ifaddrs *ifap;
-  getifaddrs(&ifap);
-  for (auto ifa = ifap; ifa; ifa = ifa->ifa_next) {
-    if (ifa->ifa_addr && ifn == ifa->ifa_name) {
-      if (ifa->ifa_addr->sa_family == AF_INET) {
-        auto sa = reinterpret_cast<struct sockaddr_in *>(ifa->ifa_addr);
-        char buf[INET_ADDRSTRLEN];
-        if (inet_ntop(AF_INET, &sa->sin_addr, buf, INET_ADDRSTRLEN)) {
-          freeifaddrs(ifap);
-          return std::string(buf, INET_ADDRSTRLEN);
-        }
-      }
-    }
-  }
-  freeifaddrs(ifap);
-#endif
   return std::string();
 }
 
@@ -1939,12 +1921,12 @@ inline int write_headers(Stream &strm, const T &info, const Headers &headers) {
   return write_len;
 }
 
-inline sssize_t write_content(Stream &strm, ContentProvider content_provider,
+inline ssize_t write_content(Stream &strm, ContentProvider content_provider,
                              size_t offset, size_t length) {
   size_t begin_offset = offset;
   size_t end_offset = offset + length;
   while (offset < end_offset) {
-    sssize_t written_length = 0;
+    ssize_t written_length = 0;
 
     DataSink data_sink;
     data_sink.write = [&](const char *d, size_t l) {
@@ -1957,18 +1939,18 @@ inline sssize_t write_content(Stream &strm, ContentProvider content_provider,
     content_provider(offset, end_offset - offset, data_sink);
     if (written_length < 0) { return written_length; }
   }
-  return static_cast<sssize_t>(offset - begin_offset);
+  return static_cast<ssize_t>(offset - begin_offset);
 }
 
 template <typename T>
-inline sssize_t write_content_chunked(Stream &strm,
+inline ssize_t write_content_chunked(Stream &strm,
                                      ContentProvider content_provider,
                                      T is_shutting_down) {
   size_t offset = 0;
   auto data_available = true;
-  sssize_t total_written_length = 0;
+  ssize_t total_written_length = 0;
   while (data_available && !is_shutting_down()) {
-    sssize_t written_length = 0;
+    ssize_t written_length = 0;
 
     DataSink data_sink;
     data_sink.write = [&](const char *d, size_t l) {
@@ -2123,14 +2105,14 @@ inline bool parse_range_header(const std::string &s, Ranges &ranges) {
       static auto re_another_range = std::regex(R"(\s*(\d*)-(\d*))");
       std::cmatch cm;
       if (std::regex_match(b, e, cm, re_another_range)) {
-        sssize_t first = -1;
+        ssize_t first = -1;
         if (!cm.str(1).empty()) {
-          first = static_cast<sssize_t>(std::stoll(cm.str(1)));
+          first = static_cast<ssize_t>(std::stoll(cm.str(1)));
         }
 
-        sssize_t last = -1;
+        ssize_t last = -1;
         if (!cm.str(2).empty()) {
-          last = static_cast<sssize_t>(std::stoll(cm.str(2)));
+          last = static_cast<ssize_t>(std::stoll(cm.str(2)));
         }
 
         if (first != -1 && last != -1 && first > last) {
